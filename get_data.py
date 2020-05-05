@@ -17,6 +17,17 @@ def make_request(page):
     html = urlopen(req).read().decode("utf-8")
     return html
 
+def get_last_page():
+    page = "https://pkgs.alpinelinux.org/packages?branch=edge&arch=armv7"
+    html = make_request(page)
+    soup = BeautifulSoup(html, "html.parser")
+    pagination = soup.find("div", {"id": "pagination"})
+    list_items = pagination.findAll("a")
+    list_item = list_items[-1]
+    href = list_item.get("href")
+    last_page = int(href.split("page=")[-1].split("&")[0])
+    return last_page
+
 def make_soup(html):
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find(attrs={"class": "table-responsive"})
@@ -62,7 +73,8 @@ def clean_files():
 if __name__ == "__main__":
     os.makedirs("csvs", exist_ok=True)
     url = "https://pkgs.alpinelinux.org/packages?page={page}&branch=edge&arch=armv7"
-    for i in tqdm(range(1, 288), desc="scrapping"):
+    last_page = get_last_page()
+    for i in tqdm(range(1, last_page + 1), desc="scrapping"):
         df = pd.DataFrame()
         html = make_request(page=i)
         a, elements = make_soup(html)
